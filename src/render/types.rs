@@ -1,5 +1,6 @@
 use glium;
 
+use crate::delauney::Vec2;
 use std::fmt;
 use std::ops::Index;
 use std::str::FromStr;
@@ -35,12 +36,17 @@ impl Coord {
         &self.position.2
     }
 
+    pub fn vec2(&self) -> Vec2 {
+        Vec2::new(self.position.0, self.position.1)
+    }
+
     pub fn vec3(&self) -> [f32; 3] {
         [self.position.0, self.position.1, self.position.2]
     }
 }
 
-// Could change to enum, and make ParseCoordError with 'kind' parameter, if there is time
+// Could change to enum, and make ParseCoordError with 'kind' parameter, for more accurate error
+// output, if there is time
 #[derive(Debug, PartialEq)]
 pub struct CoordError;
 
@@ -58,7 +64,7 @@ impl From<std::num::ParseFloatError> for CoordError {
 
 impl std::error::Error for CoordError {}
 
-// Implicitly implement ToString
+// Implicitly implements ToString
 impl fmt::Display for Coord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({},{},{})", self.x(), self.y(), self.z())
@@ -200,7 +206,7 @@ impl CameraBuilder {
 mod tests {
     use super::*;
     #[test]
-    fn parse_coords() {
+    fn coords_can_be_parsed() {
         let coord1 = "(15,20,15)".parse::<Coord>();
         assert!(coord1.is_ok());
         assert_eq!(coord1.unwrap(), Coord::new(15.0, 20.0, 15.0));

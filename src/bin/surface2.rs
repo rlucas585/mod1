@@ -5,12 +5,8 @@
 
 use glium::Surface;
 
+use algo_rust::map::Map;
 use algo_rust::render::{self, CameraBuilder, Coord};
-
-#[derive(Copy, Clone)]
-pub struct Vertex {
-    position: (f32, f32, f32),
-}
 
 fn main() {
     use glium::glutin;
@@ -22,31 +18,28 @@ fn main() {
 
     let mut zoom = 2.0;
 
-    let vertices: [Coord; 4] = [
-        Coord::new(0.0, 0.0, 0.0),
-        Coord::new(10.0, 0.0, 0.0),
-        Coord::new(10.0, 10.0, 0.0),
-        Coord::new(0.0, 10.0, 0.0),
-    ];
+    let map = Map::new_from_file("src/map/demo_a.mod1").unwrap();
+    println!("map: {}", map);
 
-    let indices: [u16; 6] = [0, 1, 2, 0, 3, 2];
-
-    glium::implement_vertex!(Vertex, position);
-
-    let mut camera_matrix = CameraBuilder::new()
-        .zoom(2.0)
-        .position(Coord::new(0.5, -0.6, 1.5))
-        .direction(Coord::new(0.0, 2.0, 1.0))
-        .up(Coord::new(0.0, 1.0, 0.0))
-        .build();
-
-    let vertex_buffer = glium::VertexBuffer::new(&display, &vertices).unwrap();
+    let vertex_buffer = glium::VertexBuffer::new(&display, &map.vertices).unwrap();
+    println!("{:?}", map.indices);
     let indices = glium::IndexBuffer::new(
         &display,
         glium::index::PrimitiveType::TrianglesList,
-        &indices,
+        &map.indices,
     )
     .unwrap();
+
+    let mut camera_matrix = CameraBuilder::new()
+        .zoom(2.0)
+        .position(Coord::new(
+            0.5 * *map.center().x(),
+            -0.6 * 1.5 * map.scale as f32,
+            1.5 - (map.scale as f32 / 3.0),
+        ))
+        .direction(Coord::new(0.0, 2.0, 1.0))
+        .up(Coord::new(0.0, 1.0, 0.0))
+        .build();
 
     let vertex_shader_src = r#"
         #version 150
@@ -56,7 +49,7 @@ fn main() {
         uniform mat4 perspective;
         uniform mat4 model;
         uniform mat4 view;
-        
+
         void main() {
             mat4 modelview = view * model;
             gl_Position = perspective * modelview * vec4(position, 1.0);
@@ -138,7 +131,7 @@ fn main() {
                     input,
                     is_synthetic: _,
                 } => {
-                    render::key_event(input, &mut camera_matrix);
+                    render::key_event(input, &mut camera_matrix, map.scale);
                 }
                 glutin::event::WindowEvent::MouseWheel {
                     device_id: _,
@@ -146,7 +139,7 @@ fn main() {
                     phase: _,
                     ..
                 } => {
-                    render::mouse_scroll(&mut zoom, delta);
+                    render::mouse_scroll(&mut zoom, delta, map.scale);
                 }
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;

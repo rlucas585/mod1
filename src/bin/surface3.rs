@@ -1,99 +1,73 @@
-#![allow(unused_mut, unused_variables)]
+//! # surface3
+//!
+//! `surface3` attempts to incorporate elevation into the 3D model, with different color applied to
+//! the surface at different heights.
 
-fn view_matrix(position: &[f32; 3], direction: &[f32; 3], up: &[f32; 3]) -> [[f32; 4]; 4] {
-    let f = {
-        let f = direction;
-        let len = f[0] * f[0] + f[1] * f[1] + f[2] * f[2];
-        let len = len.sqrt();
-        [f[0] / len, f[1] / len, f[2] / len]
-    };
+use glium::Surface;
 
-    let s = [
-        up[1] * f[2] - up[2] * f[1],
-        up[2] * f[0] - up[0] * f[2],
-        up[0] * f[1] - up[1] * f[0],
-    ];
-
-    let s_norm = {
-        let len = s[0] * s[0] + s[1] * s[1] + s[2] * s[2];
-        let len = len.sqrt();
-        [s[0] / len, s[1] / len, s[2] / len]
-    };
-
-    let u = [
-        f[1] * s_norm[2] - f[2] * s_norm[1],
-        f[2] * s_norm[0] - f[0] * s_norm[2],
-        f[0] * s_norm[1] - f[1] * s_norm[0],
-    ];
-
-    let p = [
-        -position[0] * s_norm[0] - position[1] * s_norm[1] - position[2] * s_norm[2],
-        -position[0] * u[0] - position[1] * u[1] - position[2] * u[2],
-        -position[0] * f[0] - position[1] * f[1] - position[2] * f[2],
-    ];
-
-    [
-        [s_norm[0], u[0], f[0], 0.0],
-        [s_norm[1], u[1], f[1], 0.0],
-        [s_norm[2], u[2], f[2], 0.0],
-        [p[0], p[1], p[2], 1.0],
-    ]
-}
-
-use algo_rust::teapot;
-use glium::Surface; // For Frame traits
+use algo_rust::map::Map;
+use algo_rust::render::{self, CameraBuilder, Coord};
 
 fn main() {
     use glium::glutin;
 
-    let mut event_loop = glutin::event_loop::EventLoop::new();
+    let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new();
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
-    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
+    let mut zoom = 2.0;
+
+    let map = Map::new_from_file("src/map/demo_c.mod1").unwrap();
+    println!("map: {}", map);
+
+    let vertex_buffer = glium::VertexBuffer::new(&display, &map.vertices).unwrap();
+    println!("{:?}", map.indices);
     let indices = glium::IndexBuffer::new(
         &display,
         glium::index::PrimitiveType::TrianglesList,
-        &teapot::INDICES,
+        &map.indices,
     )
     .unwrap();
 
-    // Set up the 'Program', containing vertex shader and fragment shader.
+    let mut camera_matrix = CameraBuilder::new()
+        .zoom(2.0)
+        .position(Coord::new(
+            0.5 * (*map.center().x() / 5.0),
+            -0.6 * map.scale as f32,
+            -1.5 + (map.scale as f32 / 3.0),
+        ))
+        .direction(Coord::new(0.0, 2.0, -1.0))
+        .up(Coord::new(0.0, 1.0, 0.0))
+        .build();
+
     let vertex_shader_src = r#"
         #version 150
 
         in vec3 position;
-        in vec3 normal;
-
-        out vec3 v_normal;
+        out float elevation; // pass position on to fragment shader
 
         uniform mat4 perspective;
-        uniform mat4 view;
         uniform mat4 model;
-        
+        uniform mat4 view;
+
         void main() {
+            elevation = position.z;
+
             mat4 modelview = view * model;
-            v_normal = transpose(inverse(mat3(modelview))) * normal;
             gl_Position = perspective * modelview * vec4(position, 1.0);
         }
-            "#;
+        "#;
 
     let fragment_shader_src = r#"
             #version 150
 
-            in vec3 v_normal;
+            in float elevation;
             out vec4 color;
-            uniform vec3 u_light;
 
             void main() {
-                float brightness = dot(normalize(v_normal), normalize(u_light));
-                vec3 dark_color = vec3(0.6, 0.0, 0.0);
-                vec3 regular_color = vec3(1.0, 0.0, 0.0);
-                color = vec4(mix(dark_color, regular_color, brightness), 1.0);
+                color = vec4(0.0, (elevation / 255.0), 0.0, 1.0);
             }
-
             "#;
 
     let program =
@@ -132,20 +106,18 @@ fn main() {
         };
 
         let model = [
-            [0.01, 0.0, 0.0, 0.0],
-            [0.0, 0.01, 0.0, 0.0],
-            [0.0, 0.0, 0.01, 0.0],
-            [0.0, 0.0, 4.0, 1.0f32],
+            [0.1, 0.0, 0.0, 0.0],
+            [0.0, 0.1, 0.0, 0.0],
+            [0.0, 0.0, 0.1, 0.0],
+            [0.0, 0.0, zoom, 1.0f32],
         ];
-        let light = [-1.0, 0.4, 0.9f32];
-        let view = view_matrix(&[2.0, -3.0, 1.0], &[-1.0, 1.0, 1.0], &[0.0, 1.0, 0.0]);
 
         target
             .draw(
-                (&positions, &normals),
+                &vertex_buffer,
                 &indices,
                 &program,
-                &glium::uniform! { model: model, view: view, perspective: perspective, u_light: light },
+                &glium::uniform! { model: model, perspective: perspective, view: camera_matrix.mat4() },
                 &params,
             )
             .unwrap();
@@ -158,6 +130,21 @@ fn main() {
 
         match ev {
             glutin::event::Event::WindowEvent { event, .. } => match event {
+                glutin::event::WindowEvent::KeyboardInput {
+                    device_id: _,
+                    input,
+                    is_synthetic: _,
+                } => {
+                    render::key_event(input, &mut camera_matrix, map.scale);
+                }
+                glutin::event::WindowEvent::MouseWheel {
+                    device_id: _,
+                    delta,
+                    phase: _,
+                    ..
+                } => {
+                    render::mouse_scroll(&mut zoom, delta, map.scale);
+                }
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;

@@ -139,7 +139,7 @@ fn main() {
                     input,
                     is_synthetic: _,
                 } => {
-                    render::key_event(input, &mut camera_matrix);
+                    render::key_event(input, &mut camera_matrix, 1);
                 }
                 glutin::event::WindowEvent::MouseWheel {
                     device_id: _,
@@ -147,7 +147,7 @@ fn main() {
                     phase: _,
                     ..
                 } => {
-                    render::mouse_scroll(&mut zoom, delta);
+                    render::mouse_scroll(&mut zoom, delta, 1);
                 }
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
