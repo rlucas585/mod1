@@ -10,7 +10,8 @@ progress I was able to make in the given time.
 ![mod1 screenshot](images/water_level_example.png)
 
 The aim of this project was to render a 3-dimensional surface, and
-simulate the effect of water being introduced to the environment.
+simulate the effect of water being introduced to the environment. Full
+instructions for the project can be seen [here](Mod1_Instructions.pdf).
 
 ### Built With
 
@@ -53,12 +54,51 @@ These binaries mark some of the progress of the project.
   water effect added (water level can be raised and lowered over the
   surface).
 
+## Usage
+
+### Run Program
+
 To run any of the binaries after building:
 ```
-cargo run --bin <binary-name>
+cargo run --bin <binary-name> <path-to-mod1-file>
 ```
 
-## Usage
+Or
+```
+cargo run --release --bin <binary-name> <path-to-mod1-file>
+```
+to run the release build.
+
+### Map files
+
+A `mod1` map file must be present for `mod1` to run. A range of demo map
+files are present in the `src/map/` directory.
+
+A valid map file contains a list of coordinates on separate lines, with
+3 values for each coordinate (an x, y and z value). Values must be
+separated by commas and enclosed within parentheses (`()`).
+
+An example valid map file is as follows:
+```
+(0, 0, 80)
+(50, -10, 50)
+(100, 0, 50)
+(150, -10, 50)
+(190, -10, 60)
+(-10, 50, 70)
+(0, 100, 50)
+(0, 150, 45)
+(0, 200, 60)
+(50, 195, 55)
+(100, 190, 60)
+(150, 190, 50)
+(210, 100, 70)
+(220, 150, 60)
+(210, 210, 80)
+(100, 100, -110)
+```
+
+### Controls
 
 * `←` - pan right (Yes, in current build left is right)
 * `→` - pan left
