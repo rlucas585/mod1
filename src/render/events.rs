@@ -18,7 +18,23 @@ pub fn mouse_scroll(zoom: &mut f32, delta: MouseScrollDelta, scale: usize) {
     };
 }
 
-pub fn key_event(input: KeyboardInput, camera: &mut CameraMatrix, scale: usize) {
+fn adjust_water_level(water_level: &mut f32, change: f32) {
+    *water_level += change;
+    *water_level = if *water_level > 255.0 {
+        255.0
+    } else if *water_level < 0.0 {
+        0.0
+    } else {
+        *water_level
+    };
+}
+
+pub fn key_event(
+    input: KeyboardInput,
+    camera: &mut CameraMatrix,
+    water_level: &mut f32,
+    scale: usize,
+) {
     match input {
         KeyboardInput {
             scancode: _,
@@ -43,12 +59,8 @@ pub fn key_event(input: KeyboardInput, camera: &mut CameraMatrix, scale: usize) 
             VirtualKeyCode::S => *camera.direction.y_mut() -= 0.5 * scale as f32,
             VirtualKeyCode::Q => *camera.direction.z_mut() -= 0.5 * scale as f32,
             VirtualKeyCode::E => *camera.direction.z_mut() += 0.5 * scale as f32,
-            VirtualKeyCode::Key6 => *camera.up.x_mut() += 0.5 * scale as f32,
-            VirtualKeyCode::Key7 => *camera.up.y_mut() += 0.5 * scale as f32,
-            VirtualKeyCode::Key8 => *camera.up.z_mut() += 0.5 * scale as f32,
-            VirtualKeyCode::Y => *camera.up.x_mut() -= 0.5 * scale as f32,
-            VirtualKeyCode::U => *camera.up.y_mut() -= 0.5 * scale as f32,
-            VirtualKeyCode::I => *camera.up.z_mut() -= 0.5 * scale as f32,
+            VirtualKeyCode::J => adjust_water_level(water_level, -0.5),
+            VirtualKeyCode::K => adjust_water_level(water_level, 0.5),
             _ => (),
         },
         _ => (),

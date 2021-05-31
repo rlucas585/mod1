@@ -87,6 +87,8 @@ fn main() {
         ..Default::default()
     };
 
+    let mut dummy_water = 0.0;
+
     event_loop.run(move |ev, _, control_flow| {
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
@@ -139,7 +141,7 @@ fn main() {
                     input,
                     is_synthetic: _,
                 } => {
-                    render::key_event(input, &mut camera_matrix, 1);
+                    render::key_event(input, &mut camera_matrix, &mut dummy_water, 1);
                 }
                 glutin::event::WindowEvent::MouseWheel {
                     device_id: _,

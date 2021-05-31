@@ -8,12 +8,14 @@ use std::str::FromStr;
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Coord {
     pub position: (f32, f32, f32),
+    pub is_water: f32,
 }
 
 impl Coord {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self {
             position: (x, y, z),
+            is_water: 0.0,
         }
     }
 
@@ -34,6 +36,10 @@ impl Coord {
     }
     pub fn z(&self) -> &f32 {
         &self.position.2
+    }
+    pub fn set_as_water(mut self) -> Self {
+        self.is_water = 1.0;
+        self
     }
 
     pub fn vec2(&self) -> Vec2 {
@@ -108,7 +114,7 @@ impl Index<usize> for Coord {
     }
 }
 
-glium::implement_vertex!(Coord, position);
+glium::implement_vertex!(Coord, position, is_water);
 
 #[derive(Copy, Clone, Debug)]
 pub struct CameraMatrix {

@@ -27,12 +27,20 @@ macro_rules! find_index {
 
 const SCALE_FACTOR: f32 = 6.0;
 
+#[derive(Debug)]
+pub struct Rectangle {
+    pub origin: Coord,
+    pub x_size: f32,
+    pub y_size: f32,
+}
+
 pub struct Map {
     pub vertices: Vec<Coord>,
     center: Coord,
     pub indices: Vec<u16>,
     pub scale: usize,
     pub elevation_max: f32,
+    pub base: Rectangle,
 }
 
 impl Map {
@@ -46,7 +54,7 @@ impl Map {
                 return Err(io::Error::new(io::ErrorKind::Other, "Invalid Coord!"));
             }
         }
-        let (center, scale) = Map::add_edges(&mut vertices);
+        let (center, scale, base) = Map::add_edges(&mut vertices);
         // "Normalize" elevations to
         // for vertex in vertices.iter_mut() {
         //     *(*vertex).z_mut() /= 4.0;
@@ -80,6 +88,7 @@ impl Map {
             indices,
             scale,
             elevation_max,
+            base,
         })
     }
 
@@ -87,7 +96,7 @@ impl Map {
         return self.center;
     }
 
-    fn add_edges(vertices: &mut Vec<Coord>) -> (Coord, usize) {
+    fn add_edges(vertices: &mut Vec<Coord>) -> (Coord, usize, Rectangle) {
         let max_x = get_edge_val!(max_by_key, vertices, x);
         let min_x = get_edge_val!(min_by_key, vertices, x);
         let max_y = get_edge_val!(max_by_key, vertices, y);
@@ -131,6 +140,11 @@ impl Map {
         (
             Coord::new((max_x + min_x) / 2.0, (max_y + min_y) / 2.0, 0.0),
             ((x_range + y_range) / (2.0 * SCALE_FACTOR)) as usize,
+            Rectangle {
+                origin: Coord::new(min_x, min_y, 0.0),
+                x_size: x_range,
+                y_size: y_range,
+            },
         )
     }
 
