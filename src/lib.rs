@@ -245,10 +245,6 @@ pub fn run(config: Config) -> Result<(), &'static str> {
 
     let mut water_level = 0.0;
 
-    for vertex in vertices.iter() {
-        println!("{:?}", vertex);
-    }
-
     let params = glium::DrawParameters {
         depth: glium::Depth {
             test: glium::draw_parameters::DepthTest::IfLess,
