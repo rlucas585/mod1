@@ -51,9 +51,9 @@ impl Map {
         let triangulation = delauney_triangulation(
             &points,
             Triangle::new(
-                Vec2::new(0.0, 10.0 * scale as f32),
-                Vec2::new(10.0 * scale as f32, -(10.0 * scale as f32)),
-                Vec2::new(-(10.0 * scale as f32), -(10.0 * scale as f32)),
+                Vec2::new(0.0, 200.0 * scale as f32),
+                Vec2::new(200.0 * scale as f32, -(200.0 * scale as f32)),
+                Vec2::new(-(200.0 * scale as f32), -(200.0 * scale as f32)),
             ),
         );
         for triangle in triangulation.iter() {
