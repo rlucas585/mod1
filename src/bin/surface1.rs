@@ -6,7 +6,7 @@
 
 use glium::Surface;
 
-use algo_rust::render::{self, CameraBuilder, Coord};
+use mod1::render::{self, CameraBuilder, Coord};
 
 #[derive(Copy, Clone)]
 pub struct Vertex {

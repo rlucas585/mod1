@@ -32,6 +32,7 @@ pub struct Map {
     center: Coord,
     pub indices: Vec<u16>,
     pub scale: usize,
+    pub elevation_max: f32,
 }
 
 impl Map {
@@ -46,6 +47,20 @@ impl Map {
             }
         }
         let (center, scale) = Map::add_edges(&mut vertices);
+        // "Normalize" elevations to
+        // for vertex in vertices.iter_mut() {
+        //     *(*vertex).z_mut() /= 4.0;
+        // }
+        let elevation_max = *vertices
+            .iter()
+            .max_by_key(|&vertex| *vertex.z() as i32)
+            .unwrap()
+            .z();
+        let elevation_max = if elevation_max <= 0.0 {
+            10.0
+        } else {
+            elevation_max
+        };
 
         let points: Vec<Vec2> = vertices.iter().map(|&coord| coord.vec2()).collect();
         let triangulation = delauney_triangulation(
@@ -56,9 +71,6 @@ impl Map {
                 Vec2::new(-(200.0 * scale as f32), -(200.0 * scale as f32)),
             ),
         );
-        for triangle in triangulation.iter() {
-            println!("{}", triangle);
-        }
         let indices = Map::calculate_indices(triangulation, &vertices);
 
         // Scaling may be useful to add at some point, to enable a wider variety of maps
@@ -67,6 +79,7 @@ impl Map {
             center,
             indices,
             scale,
+            elevation_max,
         })
     }
 

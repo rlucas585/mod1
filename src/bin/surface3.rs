@@ -5,8 +5,8 @@
 
 use glium::Surface;
 
-use algo_rust::map::Map;
-use algo_rust::render::{self, CameraBuilder, Coord};
+use mod1::map::Map;
+use mod1::render::{self, CameraBuilder, Coord};
 
 fn main() {
     use glium::glutin;
